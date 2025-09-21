@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import type { ShoppingItem, Folder } from '../types';
+import type { ShoppingItem } from '../types';
 
 interface AddItemFormProps {
   userId: string;
-  folders: Folder[];
   onAdd: (item: Omit<ShoppingItem, 'id' | 'created_at' | 'updated_at'>) => Promise<{ error: any }>;
 }
 
-export function AddItemForm({ userId, folders, onAdd }: AddItemFormProps) {
+export function AddItemForm({ userId, onAdd }: AddItemFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
-  const [folderId, setFolderId] = useState('');
   const [purchaseLink, setPurchaseLink] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,16 +21,14 @@ export function AddItemForm({ userId, folders, onAdd }: AddItemFormProps) {
     setLoading(true);
     const { error } = await onAdd({
       user_id: userId,
-      folder_id: folderId || null,
       name: name.trim(),
       purchase_link: purchaseLink.trim() || null,
       image_url: imageUrl.trim() || null,
-      status: 'pending',
+      completed: false,
     });
 
     if (!error) {
       setName('');
-      setFolderId('');
       setPurchaseLink('');
       setImageUrl('');
       setIsOpen(false);
@@ -77,24 +73,6 @@ export function AddItemForm({ userId, folders, onAdd }: AddItemFormProps) {
               placeholder="Np. iPhone 15 Pro"
               required
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Folder
-            </label>
-            <select
-              value={folderId}
-              onChange={(e) => setFolderId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            >
-              <option value="">Bez folderu</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div>

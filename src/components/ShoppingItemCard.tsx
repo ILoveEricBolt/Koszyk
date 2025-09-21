@@ -1,29 +1,26 @@
 import React, { useState } from 'react';
-import { ExternalLink, Trash2, Check, X, Edit3, Ban } from 'lucide-react';
-import type { ShoppingItem, Folder } from '../types';
+import { ExternalLink, Trash2, Check, X, Edit3 } from 'lucide-react';
+import type { ShoppingItem } from '../types';
 
 interface ShoppingItemCardProps {
   item: ShoppingItem;
-  folders: Folder[];
   onUpdate: (id: string, updates: Partial<ShoppingItem>) => Promise<{ error: any }>;
   onDelete: (id: string) => Promise<{ error: any }>;
 }
 
-export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: ShoppingItemCardProps) {
+export function ShoppingItemCard({ item, onUpdate, onDelete }: ShoppingItemCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(item.name);
-  const [editedFolderId, setEditedFolderId] = useState(item.folder_id || '');
   const [editedLink, setEditedLink] = useState(item.purchase_link || '');
   const [editedImageUrl, setEditedImageUrl] = useState(item.image_url || '');
 
-  const handleStatusChange = (status: 'pending' | 'completed' | 'cancelled') => {
-    onUpdate(item.id, { status });
+  const handleToggleComplete = () => {
+    onUpdate(item.id, { completed: !item.completed });
   };
 
   const handleSaveEdit = async () => {
     await onUpdate(item.id, {
       name: editedName,
-      folder_id: editedFolderId || null,
       purchase_link: editedLink || null,
       image_url: editedImageUrl || null,
     });
@@ -32,30 +29,13 @@ export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: Shopping
 
   const handleCancelEdit = () => {
     setEditedName(item.name);
-    setEditedFolderId(item.folder_id || '');
     setEditedLink(item.purchase_link || '');
     setEditedImageUrl(item.image_url || '');
     setIsEditing(false);
   };
 
-  const getStatusColor = () => {
-    switch (item.status) {
-      case 'completed': return 'bg-green-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (item.status) {
-      case 'completed': return <Check className="w-12 h-12 text-white" />;
-      case 'cancelled': return <X className="w-12 h-12 text-white" />;
-      default: return null;
-    }
-  };
-
   return (
-    <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${item.status !== 'pending' ? 'opacity-75' : ''}`}>
+    <div className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${item.completed ? 'opacity-75' : ''}`}>
       {item.image_url && (
         <div className="relative h-48 overflow-hidden">
           <img
@@ -66,9 +46,9 @@ export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: Shopping
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
-          {item.status !== 'pending' && (
-            <div className={`absolute inset-0 ${getStatusColor()} bg-opacity-80 flex items-center justify-center`}>
-              {getStatusIcon()}
+          {item.completed && (
+            <div className="absolute inset-0 bg-green-500 bg-opacity-80 flex items-center justify-center">
+              <Check className="w-12 h-12 text-white" />
             </div>
           )}
         </div>
@@ -84,18 +64,6 @@ export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: Shopping
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Nazwa produktu"
             />
-            <select
-              value={editedFolderId}
-              onChange={(e) => setEditedFolderId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Bez folderu</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
-              ))}
-            </select>
             <input
               type="url"
               value={editedLink}
@@ -128,14 +96,9 @@ export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: Shopping
         ) : (
           <>
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className={`text-xl font-semibold ${item.status !== 'pending' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                  {item.name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Zaktualizowano: {new Date(item.updated_at).toLocaleDateString('pl-PL')}
-                </p>
-              </div>
+              <h3 className={`text-xl font-semibold ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                {item.name}
+              </h3>
               <div className="flex space-x-2">
                 <button
                   onClick={() => setIsEditing(true)}
@@ -167,35 +130,16 @@ export function ShoppingItemCard({ item, folders, onUpdate, onDelete }: Shopping
                 )}
               </div>
               
-              <div className="flex space-x-2">
-                {item.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusChange('completed')}
-                      className="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-all"
-                      title="Oznacz jako kupione"
-                    >
-                      <Check className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange('cancelled')}
-                      className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-all"
-                      title="Anuluj"
-                    >
-                      <Ban className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
-                {item.status !== 'pending' && (
-                  <button
-                    onClick={() => handleStatusChange('pending')}
-                    className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all"
-                    title="Przywróć do listy"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={handleToggleComplete}
+                className={`p-2 rounded-full transition-all ${
+                  item.completed
+                    ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {item.completed ? <X className="w-5 h-5" /> : <Check className="w-5 h-5" />}
+              </button>
             </div>
           </>
         )}

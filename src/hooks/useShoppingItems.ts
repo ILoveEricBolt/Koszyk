@@ -55,17 +55,6 @@ export function useShoppingItems(userId?: string) {
     return { error };
   };
 
-  const getItemsByStatus = (status: 'pending' | 'completed' | 'cancelled') => {
-    return items.filter(item => item.status === status);
-  };
-
-  const getItemsByFolder = (folderId?: string) => {
-    if (!folderId) {
-      return items.filter(item => !item.folder_id);
-    }
-    return items.filter(item => item.folder_id === folderId);
-  };
-
   const deleteItem = async (id: string) => {
     const { error } = await supabase
       .from('shopping_items')
@@ -78,14 +67,5 @@ export function useShoppingItems(userId?: string) {
     return { error };
   };
 
-  return { 
-    items, 
-    loading, 
-    addItem, 
-    updateItem, 
-    deleteItem, 
-    refetch: fetchItems,
-    getItemsByStatus,
-    getItemsByFolder
-  };
+  return { items, loading, addItem, updateItem, deleteItem, refetch: fetchItems };
 }
